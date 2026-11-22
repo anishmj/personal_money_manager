@@ -35,6 +35,7 @@ from services.visualization_service import (
     expense_category_donut_chart,
     period_daily_expense_chart
 )
+from ui.bootstrap import render_dashboard_kpis
 
 # --------------------------------------------------
 # CONFIGURATION
@@ -571,42 +572,6 @@ elif page == "Dashboard":
                 align-items: center;
                 margin-right: 0.15rem;
             }
-            [data-testid="stHorizontalBlock"]:has(.kpi-card) {
-                display: flex;
-                flex-direction: row !important;
-                flex-wrap: wrap;
-                gap: 0.55rem;
-                align-items: stretch;
-            }
-            [data-testid="stHorizontalBlock"]:has(.kpi-card) > [data-testid="stColumn"] {
-                flex: 1 1 calc(50% - 0.55rem) !important;
-                width: calc(50% - 0.55rem) !important;
-                min-width: 0 !important;
-            }
-            [data-testid="stHorizontalBlock"]:has(.kpi-card) > [data-testid="stColumn"]:last-child {
-                flex-basis: 100% !important;
-                width: 100% !important;
-            }
-            .kpi-card {
-                min-height: 0;
-                padding: 10px 11px;
-                border-radius: 10px;
-            }
-            .kpi-label {
-                font-size: 0.76rem;
-                margin-bottom: 4px;
-            }
-            .kpi-value {
-                font-size: clamp(1.05rem, 4.7vw, 1.3rem);
-                line-height: 1.2;
-                margin-bottom: 4px;
-                overflow-wrap: anywhere;
-            }
-            .kpi-comparison {
-                min-height: 0;
-                font-size: 0.7rem;
-                line-height: 1.3;
-            }
             [data-testid="stPlotlyChart"] {
                 width: 100% !important;
                 min-width: 0 !important;
@@ -767,43 +732,26 @@ elif page == "Dashboard":
                 detail = f"{status.title()} {abs(percentage):.1f}% (₹{absolute:+,.2f})"
             return f"{label}: {detail}"
 
-        kpi1, kpi2, kpi3 = st.columns(3)
-
-        with kpi1:
-            st.markdown(
-                f"""
-                <div class="kpi-card kpi-neutral">
-                    <div class="kpi-label">Current Balance</div>
-                    <div class="kpi-value">₹{current_balance:,.2f}</div>
-                    <div class="kpi-comparison">Overall balance; unchanged by period</div>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-
-        with kpi2:
-            st.markdown(
-                f"""
-                <div class="kpi-card kpi-income">
-                    <div class="kpi-label">Total Income</div>
-                    <div class="kpi-value">₹{period_summary['income']:,.2f}</div>
-                    <div class="kpi-comparison">{comparison_text(income_comparison, "Income")}</div>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-
-        with kpi3:
-            st.markdown(
-                f"""
-                <div class="kpi-card kpi-expense">
-                    <div class="kpi-label">Total Expenses</div>
-                    <div class="kpi-value">₹{period_summary['expenses']:,.2f}</div>
-                    <div class="kpi-comparison">{comparison_text(expense_comparison, "Expenses")}</div>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+        render_dashboard_kpis([
+            {
+                "title": "Current Balance",
+                "value": f"₹{current_balance:,.2f}",
+                "detail": "Overall balance; unchanged by period",
+                "accent": "primary"
+            },
+            {
+                "title": "Total Income",
+                "value": f"₹{period_summary['income']:,.2f}",
+                "detail": comparison_text(income_comparison, "Income"),
+                "accent": "success"
+            },
+            {
+                "title": "Total Expenses",
+                "value": f"₹{period_summary['expenses']:,.2f}",
+                "detail": comparison_text(expense_comparison, "Expenses"),
+                "accent": "danger"
+            }
+        ])
 
         st.divider()
         st.subheader("Income vs Expenses")
