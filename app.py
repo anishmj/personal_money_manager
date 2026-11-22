@@ -35,6 +35,12 @@ load_dotenv()
 
 SPREADSHEET_ID = os.getenv("SPREADSHEET_ID")
 
+if not SPREADSHEET_ID:
+    try:
+        SPREADSHEET_ID = st.secrets["SPREADSHEET_ID"]
+    except (KeyError, FileNotFoundError):
+        SPREADSHEET_ID = None
+
 st.set_page_config(
     page_title="Personal Money Manager",
     page_icon="💰",
