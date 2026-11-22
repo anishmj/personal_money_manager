@@ -1,4 +1,11 @@
 
+SETTING_COLUMNS = {
+    "expense_categories": "A",
+    "income_sources": "B",
+    "payment_methods": "C"
+}
+
+
 def get_settings(service, spreadsheet_id):
 
     ranges = [
@@ -31,3 +38,28 @@ def get_settings(service, spreadsheet_id):
         "income_sources": income_sources,
         "payment_methods": payment_methods
     }
+
+
+def add_setting_value(service, spreadsheet_id, setting_type, value):
+    """Append a unique setting to its existing Settings worksheet column."""
+    if setting_type not in SETTING_COLUMNS:
+        raise ValueError(f"Unsupported setting type: {setting_type}")
+
+    normalized_value = value.strip()
+    if not normalized_value:
+        raise ValueError("Setting value cannot be empty.")
+
+    settings = get_settings(service, spreadsheet_id)
+    if normalized_value.casefold() in {
+        existing.casefold() for existing in settings[setting_type]
+    }:
+        raise ValueError("This value already exists.")
+
+    column = SETTING_COLUMNS[setting_type]
+    return service.spreadsheets().values().append(
+        spreadsheetId=spreadsheet_id,
+        range=f"'Settings'!{column}:{column}",
+        valueInputOption="USER_ENTERED",
+        insertDataOption="INSERT_ROWS",
+        body={"values": [[normalized_value]]}
+    ).execute()

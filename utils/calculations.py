@@ -2,6 +2,94 @@
 import pandas as pd
 
 
+def prepare_transactions(transactions):
+    """Normalize transaction fields used by dashboard calculations."""
+    if transactions is None or transactions.empty:
+        return transactions.copy() if transactions is not None else pd.DataFrame()
+
+    df = transactions.copy()
+    df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
+    df["Amount"] = pd.to_numeric(df["Amount"], errors="coerce")
+    df["Type"] = df["Type"].astype(str).str.strip().str.title()
+
+    df = df.dropna(subset=["Date", "Amount"]).copy()
+    df = df[df["Type"].isin(["Income", "Expense"])].copy()
+    df["Created At"] = df["Created At"].fillna("").astype(str) if "Created At" in df else ""
+
+    return df.sort_values(
+        ["Date", "Created At"] if "Created At" in df else ["Date"],
+        kind="stable"
+    ).reset_index(drop=True)
+
+
+def filter_transactions_by_period(transactions, start_date, end_date):
+    """Return transactions in an inclusive date range."""
+    df = prepare_transactions(transactions)
+    if df.empty:
+        return df
+
+    start = pd.Timestamp(start_date)
+    end = pd.Timestamp(end_date)
+    return df[(df["Date"] >= start) & (df["Date"] <= end)].copy()
+
+
+def calculate_period_totals(transactions, start_date, end_date):
+    """Calculate period income, expenses, and net savings."""
+    df = filter_transactions_by_period(transactions, start_date, end_date)
+
+    income = df.loc[df["Type"] == "Income", "Amount"].sum() if not df.empty else 0
+    expenses = df.loc[df["Type"] == "Expense", "Amount"].sum() if not df.empty else 0
+
+    return {
+        "income": float(income),
+        "expenses": float(expenses),
+        "savings": float(income - expenses),
+        "transactions": df
+    }
+
+
+def calculate_comparison(current_value, previous_value):
+    """Return absolute and percentage change against a previous period."""
+    current = float(current_value)
+    previous = float(previous_value)
+    absolute_change = current - previous
+
+    if previous == 0:
+        if current == 0:
+            percentage_change = 0.0
+            status = "unchanged"
+        else:
+            percentage_change = None
+            status = "increased"
+        return {
+            "absolute_change": absolute_change,
+            "percentage_change": percentage_change,
+            "status": status
+        }
+
+    percentage_change = (absolute_change / abs(previous)) * 100
+    status = "increased" if absolute_change > 0 else (
+        "decreased" if absolute_change < 0 else "unchanged"
+    )
+    return {
+        "absolute_change": absolute_change,
+        "percentage_change": percentage_change,
+        "status": status
+    }
+
+
+def calculate_current_balance(transactions, initial_balance, starting_date):
+    """Calculate the latest overall balance from the account starting state."""
+    df = calculate_running_balance(
+        transactions,
+        initial_balance,
+        starting_date
+    )
+    if df.empty:
+        return float(initial_balance)
+    return float(df["Running Balance"].iloc[-1])
+
+
 def calculate_running_balance(
     transactions,
     initial_balance,
