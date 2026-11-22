@@ -8,3 +8,5 @@ token.json
 service_account.json
 
 .streamlit/secrets.toml
+streamlit_secrets.toml
+convert_credentials.py
