@@ -190,19 +190,76 @@ st.markdown(
         border-color: #6366F1;
         box-shadow: 0 0 0 1px #6366F1;
     }
+    [data-testid="stMain"] [data-testid="stWidgetLabel"] p {
+        color: #1E293B;
+    }
+    [data-testid="stMain"] [data-testid="stCaptionContainer"] p,
+    [data-testid="stMain"] [data-testid="stHelp"] {
+        color: #475569;
+    }
     [data-testid="stMain"] .stButton > button,
     [data-testid="stMain"] [data-testid="stFormSubmitButton"] button {
-        border-radius: 9px;
-        border: 1px solid #D9E1EF;
+        min-height: 44px;
+        border-radius: 11px;
+        border: 1px solid #C7D2FE;
+        background: linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%);
+        color: #3730A3;
         font-weight: 600;
-        transition: transform 0.15s ease, box-shadow 0.15s ease;
+        box-shadow: 0 1px 2px rgba(49, 46, 129, 0.07);
+        transition:
+            background 0.15s ease,
+            border-color 0.15s ease,
+            box-shadow 0.15s ease,
+            transform 0.15s ease;
     }
     [data-testid="stMain"] .stButton > button:hover,
     [data-testid="stMain"] [data-testid="stFormSubmitButton"] button:hover {
-        border-color: #A5B4FC;
-        color: #4338CA;
-        box-shadow: 0 3px 10px rgba(67, 56, 202, 0.12);
-        transform: translateY(-1px);
+        border-color: #818CF8;
+        background: linear-gradient(135deg, #E0E7FF 0%, #C7D2FE 100%);
+        color: #312E81;
+        box-shadow: 0 4px 12px rgba(67, 56, 202, 0.16);
+    }
+    [data-testid="stMain"] [data-testid="stFormSubmitButton"] button {
+        border-color: #4F46E5;
+        background: linear-gradient(135deg, #4F46E5 0%, #4338CA 100%);
+        color: #FFFFFF;
+        box-shadow: 0 3px 8px rgba(67, 56, 202, 0.2);
+    }
+    [data-testid="stMain"] [data-testid="stFormSubmitButton"] button:hover {
+        border-color: #3730A3;
+        background: linear-gradient(135deg, #4338CA 0%, #3730A3 100%);
+        color: #FFFFFF;
+        box-shadow: 0 5px 14px rgba(67, 56, 202, 0.26);
+    }
+    [data-testid="stMain"] .stButton > button[kind="primary"] {
+        border-color: #DC2626;
+        background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+        color: #FFFFFF;
+        box-shadow: 0 2px 6px rgba(220, 38, 38, 0.18);
+    }
+    [data-testid="stMain"] .stButton > button[kind="primary"]:hover {
+        border-color: #B91C1C;
+        background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%);
+        color: #FFFFFF;
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.24);
+    }
+    [data-testid="stMain"] .stButton > button:focus-visible,
+    [data-testid="stMain"] [data-testid="stFormSubmitButton"] button:focus-visible {
+        outline: 3px solid rgba(99, 102, 241, 0.38);
+        outline-offset: 2px;
+    }
+    [data-testid="stMain"] .stButton > button:active,
+    [data-testid="stMain"] [data-testid="stFormSubmitButton"] button:active {
+        transform: translateY(1px);
+        box-shadow: none;
+    }
+    [data-testid="stMain"] .stButton > button:disabled,
+    [data-testid="stMain"] [data-testid="stFormSubmitButton"] button:disabled {
+        border-color: #E2E8F0;
+        background: #F1F5F9;
+        color: #94A3B8;
+        box-shadow: none;
+        transform: none;
     }
     [data-testid="stMain"] [data-testid="stDataFrame"] {
         border: 1px solid #E5EAF2;
@@ -211,6 +268,20 @@ st.markdown(
     }
     section[data-testid="stSidebar"] {
         background: linear-gradient(180deg, #F0F5FF 0%, #F8FAFC 42%, #F8FAFC 100%);
+    }
+    @media (max-width: 640px) {
+        [data-testid="stMain"] .stButton > button,
+        [data-testid="stMain"] [data-testid="stFormSubmitButton"] button {
+            width: 100%;
+            min-height: 48px;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            box-shadow: 0 2px 5px rgba(49, 46, 129, 0.1);
+        }
+        [data-testid="stMain"] .stButton > button:hover,
+        [data-testid="stMain"] [data-testid="stFormSubmitButton"] button:hover {
+            transform: none;
+        }
     }
     </style>
     """,
@@ -461,18 +532,84 @@ elif page == "Dashboard":
         [data-testid="stDateInput"] {
             margin-bottom: -0.15rem;
         }
+        .st-key-dashboard_period [data-testid="stWidgetLabel"] p,
+        .st-key-dashboard_month [data-testid="stWidgetLabel"] p,
+        .st-key-dashboard_year [data-testid="stWidgetLabel"] p,
+        .st-key-dashboard_day_date [data-testid="stWidgetLabel"] p,
+        .st-key-dashboard_custom_start [data-testid="stWidgetLabel"] p,
+        .st-key-dashboard_custom_end [data-testid="stWidgetLabel"] p {
+            color: #172554 !important;
+            font-weight: 600;
+        }
+        [data-testid="stDateInput"] [data-testid="stWidgetLabel"] p {
+            color: #172554 !important;
+            font-weight: 600;
+        }
+        .st-key-dashboard_period [data-testid="stRadioGroup"],
+        .st-key-dashboard_period [data-testid="stRadioGroup"] label,
+        .st-key-dashboard_period [data-testid="stRadioGroup"] p {
+            color: #1E293B !important;
+        }
+        .st-key-dashboard_period input[type="radio"] {
+            accent-color: #DC2626 !important;
+            color-scheme: light;
+        }
         @media (max-width: 640px) {
             .block-container {
                 padding-top: 0.5rem;
-                padding-left: 0.75rem;
-                padding-right: 0.75rem;
+                padding-left: 0.8rem;
+                padding-right: 0.8rem;
+            }
+            .st-key-dashboard_period [role="radiogroup"] {
+                display: flex;
+                flex-wrap: wrap;
+                column-gap: 0.55rem;
+                row-gap: 0.15rem;
+            }
+            .st-key-dashboard_period [role="radiogroup"] label {
+                min-height: 40px;
+                align-items: center;
+                margin-right: 0.15rem;
+            }
+            [data-testid="stHorizontalBlock"]:has(.kpi-card) {
+                display: flex;
+                flex-direction: row !important;
+                flex-wrap: wrap;
+                gap: 0.55rem;
+                align-items: stretch;
+            }
+            [data-testid="stHorizontalBlock"]:has(.kpi-card) > [data-testid="stColumn"] {
+                flex: 1 1 calc(50% - 0.55rem) !important;
+                width: calc(50% - 0.55rem) !important;
+                min-width: 0 !important;
+            }
+            [data-testid="stHorizontalBlock"]:has(.kpi-card) > [data-testid="stColumn"]:last-child {
+                flex-basis: 100% !important;
+                width: 100% !important;
             }
             .kpi-card {
-                min-height: 132px;
-                padding: 12px;
+                min-height: 0;
+                padding: 10px 11px;
+                border-radius: 10px;
+            }
+            .kpi-label {
+                font-size: 0.76rem;
+                margin-bottom: 4px;
             }
             .kpi-value {
-                font-size: 1.25rem;
+                font-size: clamp(1.05rem, 4.7vw, 1.3rem);
+                line-height: 1.2;
+                margin-bottom: 4px;
+                overflow-wrap: anywhere;
+            }
+            .kpi-comparison {
+                min-height: 0;
+                font-size: 0.7rem;
+                line-height: 1.3;
+            }
+            [data-testid="stPlotlyChart"] {
+                width: 100% !important;
+                min-width: 0 !important;
             }
         }
         </style>
@@ -492,7 +629,8 @@ elif page == "Dashboard":
         period_mode = st.radio(
             "Dashboard period",
             ["Monthly", "Weekly", "Daily", "Custom Date Range"],
-            horizontal=True
+            horizontal=True,
+            key="dashboard_period"
         )
 
         today = date.today()
@@ -510,13 +648,15 @@ elif page == "Dashboard":
                 selected_month_name = st.selectbox(
                     "Month",
                     month_names,
-                    index=today.month - 1
+                    index=today.month - 1,
+                    key="dashboard_month"
                 )
             with year_col:
                 selected_year = st.selectbox(
                     "Year",
                     year_options,
-                    index=year_options.index(today.year)
+                    index=year_options.index(today.year),
+                    key="dashboard_year"
                 )
 
             selected_month_number = month_names.index(selected_month_name) + 1
@@ -558,7 +698,8 @@ elif page == "Dashboard":
         elif period_mode == "Daily":
             selected_day = st.date_input(
                 "Select date",
-                value=today
+                value=today,
+                key="dashboard_day_date"
             )
             period_start = pd.Timestamp(selected_day)
             period_end = period_start
@@ -570,12 +711,14 @@ elif page == "Dashboard":
             with custom_col1:
                 custom_start = st.date_input(
                     "Start date",
-                    value=today - pd.Timedelta(days=6)
+                    value=today - pd.Timedelta(days=6),
+                    key="dashboard_custom_start"
                 )
             with custom_col2:
                 custom_end = st.date_input(
                     "End date",
-                    value=today
+                    value=today,
+                    key="dashboard_custom_end"
                 )
 
             if custom_end < custom_start:
