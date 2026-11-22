@@ -57,8 +57,6 @@ st.set_page_config(
     layout="wide"
 )
 
-inject_app_styles()
-
 st.markdown(
     """
     <style>
@@ -290,6 +288,8 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+
+inject_app_styles()
 
 
 # --------------------------------------------------
@@ -762,7 +762,7 @@ elif page == "Dashboard":
             ]
             for key, label, value, detail in kpi_cards:
                 with st.container(
-                    width=300,
+                    width="stretch",
                     border=True,
                     key=f"dashboard-kpi-{key}"
                 ):

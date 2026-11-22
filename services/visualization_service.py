@@ -46,7 +46,7 @@ def period_income_expense_chart(df, start_date, end_date, period_mode):
         color_discrete_map={"Income": "#16A34A", "Expense": "#DC2626"}
     )
     fig.update_layout(
-        height=390,
+        height=330,
         xaxis_title=x_title,
         yaxis_title="Amount",
         legend_title_text="",
@@ -54,7 +54,14 @@ def period_income_expense_chart(df, start_date, end_date, period_mode):
         template="plotly_white",
         font={"family": "Inter, sans-serif", "color": "#334155"},
         title_font={"color": "#172554"},
-        legend={"font": {"color": "#334155"}},
+        legend={
+            "orientation": "h",
+            "x": 0,
+            "y": 1.02,
+            "xanchor": "left",
+            "yanchor": "bottom",
+            "font": {"color": "#334155", "size": 12}
+        },
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
         xaxis={
@@ -113,7 +120,7 @@ def expense_category_donut_chart(df, start_date, end_date):
         hovertemplate="%{label}<br>Amount: %{custom_data[0]:,.2f}<br>%{percent}<extra></extra>"
     )
     fig.update_layout(
-        height=370,
+        height=320,
         showlegend=True,
         template="plotly_white",
         font={"family": "Inter, sans-serif", "color": "#334155"},
@@ -122,7 +129,9 @@ def expense_category_donut_chart(df, start_date, end_date):
         margin={"l": 12, "r": 12, "t": 12, "b": 44},
         legend={
             "orientation": "h",
+            "x": 0,
             "y": -0.08,
+            "xanchor": "left",
             "font": {"color": "#334155", "size": 12}
         }
     )
@@ -167,7 +176,7 @@ def period_daily_expense_chart(df, start_date, end_date):
         hovertemplate="%{x|%d %b %Y}<br>Expense: %{y:,.2f}<extra></extra>"
     )
     fig.update_layout(
-        height=370,
+        height=320,
         xaxis_title="Date",
         yaxis_title="Amount",
         hovermode="x",
@@ -179,7 +188,8 @@ def period_daily_expense_chart(df, start_date, end_date):
         xaxis={
             "showgrid": False,
             "tickformat": "%d %b",
-            "nticks": 6,
+            "nticks": 5,
+            "tickangle": -30,
             "tickfont": {"color": "#475569"},
             "title_font": {"color": "#334155"}
         },

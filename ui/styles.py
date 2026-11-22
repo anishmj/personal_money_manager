@@ -4,14 +4,19 @@ import streamlit as st
 
 
 STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
-STYLESHEET_PATH = STATIC_DIR / "dashboard.css"
+STYLESHEET_PATHS = (
+    STATIC_DIR / "bootstrap.min.css",
+    STATIC_DIR / "app.css",
+)
 
 
-@st.cache_data(show_spinner=False)
 def _load_stylesheet() -> str:
-    if not STYLESHEET_PATH.is_file():
-        raise FileNotFoundError(f"Required stylesheet is missing: {STYLESHEET_PATH}")
-    return STYLESHEET_PATH.read_text(encoding="utf-8")
+    stylesheets = []
+    for path in STYLESHEET_PATHS:
+        if not path.is_file():
+            raise FileNotFoundError(f"Required stylesheet is missing: {path}")
+        stylesheets.append(path.read_text(encoding="utf-8"))
+    return "\n".join(stylesheets)
 
 
 def inject_app_styles() -> None:
