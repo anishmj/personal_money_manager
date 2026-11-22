@@ -9,7 +9,7 @@ from googleapiclient.errors import HttpError
 from services.google_sheets import get_google_sheets_service
 from services.settings_service import get_settings, add_setting_value
 from services.transaction_service import add_transaction
-from datetime import date, datetime
+from datetime import date
 from utils.calculations import (
     calculate_monthly_summary,
     calculate_period_totals,
@@ -18,7 +18,6 @@ from utils.calculations import (
     prepare_transactions
 )
 from services.finance_service import get_financial_data
-from datetime import date
 
 from services.transaction_service import (
     get_transactions,
@@ -36,6 +35,12 @@ from services.visualization_service import (
     period_daily_expense_chart
 )
 from ui.styles import inject_app_styles
+from ui.date_utils import (
+    TRANSACTION_DATE_KEY,
+    current_app_date,
+    sync_transaction_date,
+    transaction_date_needs_rollover
+)
 
 # --------------------------------------------------
 # CONFIGURATION
@@ -378,6 +383,19 @@ if page == "Add Transaction":
 
     st.header("Add Transaction")
 
+    today = current_app_date()
+    sync_transaction_date(st.session_state, today)
+
+    @st.fragment(run_every="30s")
+    def refresh_transaction_date_on_day_change():
+        if transaction_date_needs_rollover(
+            st.session_state,
+            current_app_date()
+        ):
+            st.rerun()
+
+    refresh_transaction_date_on_day_change()
+
     transaction_type = st.radio(
         "Transaction Type",
         ["Expense", "Income"],
@@ -408,12 +426,19 @@ if page == "Add Transaction":
     with st.form("transaction_form"):
         date_col, category_col = st.columns(2)
         with date_col:
-            transaction_date = st.date_input("Transaction Date")
+            transaction_date = st.date_input(
+                "Transaction Date",
+                key=TRANSACTION_DATE_KEY
+            )
         with category_col:
             if transaction_type == "Expense":
                 category = st.selectbox(
                     "Expense Category",
-                    settings["expense_categories"]
+                    [None, *settings["expense_categories"]],
+                    format_func=lambda value: (
+                        "Choose category" if value is None else value
+                    ),
+                    key="transaction_expense_category"
                 )
             else:
                 category = st.selectbox(
@@ -600,7 +625,7 @@ elif page == "Dashboard":
             key="dashboard_period"
         )
 
-        today = date.today()
+        today = current_app_date()
 
         if period_mode == "Monthly":
             month_col, year_col = st.columns(2)
@@ -1313,7 +1338,7 @@ elif page == "Monthly Reports":
         # Select any month, including future months
         selected_date = st.date_input(
             "Select reporting month",
-            value=date.today(),
+            value=current_app_date(),
             min_value=pd.Timestamp(starting_date).date()
         )
 
