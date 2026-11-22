@@ -1,7 +1,10 @@
 
 from pathlib import Path
 
+import streamlit as st
+
 from google.oauth2.credentials import Credentials
+from google.oauth2 import service_account
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 
@@ -14,8 +17,25 @@ SCOPES = [
 ]
 
 
-def get_google_sheets_service():
+def get_credentials():
 
+    # Cloud authentication using Google service account
+    try:
+        service_account_info = st.secrets["gcp_service_account"]
+
+    except (KeyError, FileNotFoundError):
+        service_account_info = None
+
+    if service_account_info is not None:
+
+        credentials = service_account.Credentials.from_service_account_info(
+            dict(service_account_info),
+            scopes=SCOPES
+        )
+
+        return credentials
+
+    # Local authentication using existing OAuth token
     if not TOKEN_FILE.exists():
         raise FileNotFoundError(
             "token.json not found. Run python auth.py first."
@@ -35,6 +55,13 @@ def get_google_sheets_service():
         raise RuntimeError(
             "Google credentials are invalid. Run python auth.py again."
         )
+
+    return credentials
+
+
+def get_google_sheets_service():
+
+    credentials = get_credentials()
 
     service = build(
         "sheets",
