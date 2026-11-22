@@ -25,7 +25,6 @@ def period_income_expense_chart(df, start_date, end_date, period_mode):
             trend.groupby(["Period", "Type"])["Amount"].sum().reset_index()
             if not trend.empty else pd.DataFrame(columns=["Period", "Type", "Amount"])
         )
-        title = f"Recent Income vs Expenses - Selected Month: {start.strftime('%B %Y')}"
         x_title = "Month"
 
     else:
@@ -35,7 +34,6 @@ def period_income_expense_chart(df, start_date, end_date, period_mode):
             period.groupby(["Period", "Type"])["Amount"].sum().reset_index()
             if not period.empty else pd.DataFrame(columns=["Period", "Type", "Amount"])
         )
-        title = f"Daily Income vs Expenses ({start.strftime('%d %b')} - {end.strftime('%d %b %Y')})"
         x_title = "Date"
 
     fig = px.bar(
@@ -44,22 +42,34 @@ def period_income_expense_chart(df, start_date, end_date, period_mode):
         y="Amount",
         color="Type",
         barmode="group",
-        title=title,
         text_auto=".2s",
         color_discrete_map={"Income": "#16A34A", "Expense": "#DC2626"}
     )
     fig.update_layout(
+        height=390,
         xaxis_title=x_title,
         yaxis_title="Amount",
         legend_title_text="",
         bargap=0.25,
         template="plotly_white",
         font={"family": "Inter, sans-serif", "color": "#334155"},
+        title_font={"color": "#172554"},
+        legend={"font": {"color": "#334155"}},
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        xaxis={"showgrid": False},
-        yaxis={"gridcolor": "#E8EDF4", "zerolinecolor": "#D8E0EC"},
-        margin={"l": 8, "r": 8, "t": 55, "b": 8}
+        xaxis={
+            "type": "category",
+            "showgrid": False,
+            "tickfont": {"color": "#475569"},
+            "title_font": {"color": "#334155"}
+        },
+        yaxis={
+            "gridcolor": "#E8EDF4",
+            "zerolinecolor": "#D8E0EC",
+            "tickfont": {"color": "#475569"},
+            "title_font": {"color": "#334155"}
+        },
+        margin={"l": 44, "r": 12, "t": 20, "b": 44}
     )
     return fig
 
@@ -91,7 +101,6 @@ def expense_category_donut_chart(df, start_date, end_date):
         names="Category",
         values="Amount",
         hole=0.55,
-        title="Expense Distribution",
         custom_data=["Amount"],
         color_discrete_sequence=[
             "#4F46E5", "#0EA5E9", "#10B981", "#F59E0B",
@@ -104,12 +113,18 @@ def expense_category_donut_chart(df, start_date, end_date):
         hovertemplate="%{label}<br>Amount: %{custom_data[0]:,.2f}<br>%{percent}<extra></extra>"
     )
     fig.update_layout(
+        height=370,
         showlegend=True,
         template="plotly_white",
         font={"family": "Inter, sans-serif", "color": "#334155"},
+        title_font={"color": "#172554"},
         paper_bgcolor="rgba(0,0,0,0)",
-        margin={"l": 8, "r": 8, "t": 55, "b": 8},
-        legend={"orientation": "h", "y": -0.08}
+        margin={"l": 12, "r": 12, "t": 12, "b": 44},
+        legend={
+            "orientation": "h",
+            "y": -0.08,
+            "font": {"color": "#334155", "size": 12}
+        }
     )
     return fig
 
@@ -144,7 +159,6 @@ def period_daily_expense_chart(df, start_date, end_date):
         daily,
         x="Date",
         y="Amount",
-        title="Daily Spending Trend",
         markers=True
     )
     fig.update_traces(
@@ -153,16 +167,29 @@ def period_daily_expense_chart(df, start_date, end_date):
         hovertemplate="%{x|%d %b %Y}<br>Expense: %{y:,.2f}<extra></extra>"
     )
     fig.update_layout(
+        height=370,
         xaxis_title="Date",
         yaxis_title="Amount",
         hovermode="x",
         template="plotly_white",
         font={"family": "Inter, sans-serif", "color": "#334155"},
+        title_font={"color": "#172554"},
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        xaxis={"showgrid": False},
-        yaxis={"gridcolor": "#E8EDF4", "zerolinecolor": "#D8E0EC"},
-        margin={"l": 8, "r": 8, "t": 55, "b": 8}
+        xaxis={
+            "showgrid": False,
+            "tickformat": "%d %b",
+            "nticks": 6,
+            "tickfont": {"color": "#475569"},
+            "title_font": {"color": "#334155"}
+        },
+        yaxis={
+            "gridcolor": "#E8EDF4",
+            "zerolinecolor": "#D8E0EC",
+            "tickfont": {"color": "#475569"},
+            "title_font": {"color": "#334155"}
+        },
+        margin={"l": 44, "r": 12, "t": 12, "b": 44}
     )
     return fig
 

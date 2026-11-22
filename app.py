@@ -35,7 +35,7 @@ from services.visualization_service import (
     expense_category_donut_chart,
     period_daily_expense_chart
 )
-from ui.bootstrap import render_dashboard_kpis
+from ui.styles import inject_app_styles
 
 # --------------------------------------------------
 # CONFIGURATION
@@ -56,6 +56,8 @@ st.set_page_config(
     page_icon="💰",
     layout="wide"
 )
+
+inject_app_styles()
 
 st.markdown(
     """
@@ -732,26 +734,40 @@ elif page == "Dashboard":
                 detail = f"{status.title()} {abs(percentage):.1f}% (₹{absolute:+,.2f})"
             return f"{label}: {detail}"
 
-        render_dashboard_kpis([
-            {
-                "title": "Current Balance",
-                "value": f"₹{current_balance:,.2f}",
-                "detail": "Overall balance; unchanged by period",
-                "accent": "primary"
-            },
-            {
-                "title": "Total Income",
-                "value": f"₹{period_summary['income']:,.2f}",
-                "detail": comparison_text(income_comparison, "Income"),
-                "accent": "success"
-            },
-            {
-                "title": "Total Expenses",
-                "value": f"₹{period_summary['expenses']:,.2f}",
-                "detail": comparison_text(expense_comparison, "Expenses"),
-                "accent": "danger"
-            }
-        ])
+        with st.container(
+            horizontal=True,
+            wrap=True,
+            gap="small",
+            key="dashboard-kpis"
+        ):
+            kpi_cards = [
+                (
+                    "balance",
+                    "Current Balance",
+                    f"₹{current_balance:,.2f}",
+                    "Overall balance; unchanged by period"
+                ),
+                (
+                    "income",
+                    "Total Income",
+                    f"₹{period_summary['income']:,.2f}",
+                    comparison_text(income_comparison, "Income")
+                ),
+                (
+                    "expenses",
+                    "Total Expenses",
+                    f"₹{period_summary['expenses']:,.2f}",
+                    comparison_text(expense_comparison, "Expenses")
+                )
+            ]
+            for key, label, value, detail in kpi_cards:
+                with st.container(
+                    width=300,
+                    border=True,
+                    key=f"dashboard-kpi-{key}"
+                ):
+                    st.metric(label, value)
+                    st.caption(detail)
 
         st.divider()
         st.subheader("Income vs Expenses")
@@ -762,7 +778,8 @@ elif page == "Dashboard":
                 period_end,
                 period_mode
             ),
-            width="stretch"
+            width="stretch",
+            config={"responsive": True, "displayModeBar": False}
         )
 
         st.divider()
@@ -778,7 +795,11 @@ elif page == "Dashboard":
             if donut is None:
                 st.info("No expenses recorded for this period.")
             else:
-                st.plotly_chart(donut, width="stretch")
+                st.plotly_chart(
+                    donut,
+                    width="stretch",
+                    config={"responsive": True, "displayModeBar": False}
+                )
 
         with chart_col2:
             st.subheader("Daily Spending Trend")
@@ -788,7 +809,8 @@ elif page == "Dashboard":
                     period_start,
                     period_end
                 ),
-                width="stretch"
+                width="stretch",
+                config={"responsive": True, "displayModeBar": False}
             )
 
     except Exception as error:
