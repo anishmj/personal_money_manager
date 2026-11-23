@@ -1,0 +1,11 @@
+{
+  "name": "personal-money-manager-native-dropdown",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "vite": "^6.0.0"
+  },
+  "scripts": {
+    "build": "vite build"
+  }
+}

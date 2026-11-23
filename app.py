@@ -37,6 +37,7 @@ from services.visualization_service import (
     period_daily_expense_chart
 )
 from ui.styles import inject_app_styles
+from ui.native_select import native_selectbox
 from ui.date_utils import (
     TRANSACTION_DATE_KEY,
     current_app_date,
@@ -495,7 +496,7 @@ if page == "Add Transaction":
             )
         with category_col:
             if transaction_type == "Expense":
-                category = st.selectbox(
+                category = native_selectbox(
                     "Expense Category",
                     [None, *settings["expense_categories"]],
                     format_func=lambda value: (
@@ -504,9 +505,10 @@ if page == "Add Transaction":
                     key="transaction_expense_category"
                 )
             else:
-                category = st.selectbox(
+                category = native_selectbox(
                     "Income Source",
-                    settings["income_sources"]
+                    settings["income_sources"],
+                    key="transaction_income_source"
                 )
 
         amount_col, payment_col = st.columns(2)
@@ -518,9 +520,10 @@ if page == "Add Transaction":
                 format="%.2f"
             )
         with payment_col:
-            payment_method = st.selectbox(
+            payment_method = native_selectbox(
                 "Payment Method",
-                settings["payment_methods"]
+                settings["payment_methods"],
+                key="transaction_payment_method"
             )
 
         description_col, notes_col = st.columns(2)
@@ -700,14 +703,14 @@ elif page == "Dashboard":
             year_options = list(range(start_year, today.year + 2))
 
             with month_col:
-                selected_month_name = st.selectbox(
+                selected_month_name = native_selectbox(
                     "Month",
                     month_names,
                     index=today.month - 1,
                     key="dashboard_month"
                 )
             with year_col:
-                selected_year = st.selectbox(
+                selected_year = native_selectbox(
                     "Year",
                     year_options,
                     index=year_options.index(today.year),
@@ -1140,14 +1143,14 @@ elif page == "Transaction History":
             start_year = pd.Timestamp(df["Date"].min()).year
             year_options = list(range(start_year, history_today.year + 2))
             with month_col:
-                selected_month_name = st.selectbox(
+                selected_month_name = native_selectbox(
                     "Month",
                     month_names,
                     index=history_today.month - 1,
                     key="history_month"
                 )
             with year_col:
-                selected_year = st.selectbox(
+                selected_year = native_selectbox(
                     "Year",
                     year_options,
                     index=year_options.index(history_today.year),
@@ -1212,12 +1215,12 @@ elif page == "Transaction History":
                 placeholder="Description or category..."
             )
         with type_col:
-            type_filter = st.selectbox(
+            type_filter = native_selectbox(
                 "Transaction Type",
                 ["All", "Income", "Expense"]
             )
         with category_col:
-            category_filter = st.selectbox(
+            category_filter = native_selectbox(
                 "Category",
                 ["All"] + sorted(df["Category"].dropna().unique().tolist())
             )
@@ -1282,7 +1285,7 @@ elif page == "Transaction History":
 
                 labels[label] = int(row["Sheet Row"])
 
-            selected_label = st.selectbox(
+            selected_label = native_selectbox(
                 "Select a transaction to update or delete",
                 list(labels.keys())
             )
@@ -1314,7 +1317,7 @@ elif page == "Transaction History":
 
                 type_col, category_col = st.columns(2)
                 with type_col:
-                    transaction_type = st.selectbox(
+                    transaction_type = native_selectbox(
                         "Type",
                         ["Expense", "Income"],
                         index=(
@@ -1335,7 +1338,7 @@ elif page == "Transaction History":
                     )
 
                 with category_col:
-                    category = st.selectbox(
+                    category = native_selectbox(
                         "Category / Income Source",
                         available_categories,
                         index=available_categories.index(
@@ -1378,7 +1381,7 @@ elif page == "Transaction History":
                             step=10.0
                         )
                     with payment_col:
-                        new_payment = st.selectbox(
+                        new_payment = native_selectbox(
                             "Payment Method",
                             payment_options,
                             index=payment_options.index(

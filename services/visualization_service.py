@@ -149,7 +149,7 @@ def expense_category_pie_chart(df, start_date, end_date):
         texttemplate="%{percent:.1%}",
         textposition="auto",
         sort=False,
-        hovertemplate="Category: %{label}<br>Amount: ₹%{custom_data[0]:,.2f}<br>Percentage: %{custom_data[1]:.1f}%<extra></extra>",
+        hovertemplate="Category: %{label}<br>Amount Spent: ₹%{customdata[0]:,.2f}<br>Percentage: %{customdata[1]:.1f}%<extra></extra>",
         marker={"line": {"color": "#FFFFFF", "width": 1}}
     )
     fig.update_layout(

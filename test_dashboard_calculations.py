@@ -118,9 +118,13 @@ def test_pie_top_ten_and_others():
     assert len(summary) == 11
     assert summary.iloc[-1]["Category"] == "Others"
     assert abs(summary["Percentage"].sum() - 100) < 0.001
-    assert expense_category_pie_chart(
+    pie = expense_category_pie_chart(
         many, "2026-11-01", "2026-11-30"
-    ) is not None
+    )
+    assert pie is not None
+    assert pie.data[0].customdata[0][0] == 1200
+    assert "Amount Spent: ₹%{customdata[0]:,.2f}" in pie.data[0].hovertemplate
+    assert "%{customdata[1]:.1f}" in pie.data[0].hovertemplate
 
 
 if __name__ == "__main__":
