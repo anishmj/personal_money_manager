@@ -1,5 +1,6 @@
 
 import os
+from html import escape
 import streamlit as st
 import pandas as pd
 
@@ -485,7 +486,6 @@ if page == "Add Transaction":
         unsafe_allow_html=True
     )
 
-    st.markdown('<div class="card shadow-sm"><div class="card-body">', unsafe_allow_html=True)
     with st.form("transaction_form"):
         date_col, category_col = st.columns(2)
         with date_col:
@@ -589,7 +589,6 @@ if page == "Add Transaction":
                 except Exception as error:
 
                     st.error(f"Unexpected error: {error}")
-    st.markdown('</div></div>', unsafe_allow_html=True)
 
 
 # --------------------------------------------------
@@ -831,47 +830,43 @@ elif page == "Dashboard":
             ("expenses", "Total Expenses", period_summary["expenses"],
              comparison_text(expense_comparison, "Expenses"), "border-danger")
         ]
-        st.markdown(
+        kpi_html = (
             '<div class="container-fluid px-0"><div class="row g-3">'
             + "".join(
-                f'''
-                <div class="col-12 col-md-6 col-xl-4">
-                  <div class="card h-100 shadow-sm border-top border-3 {accent}">
-                    <div class="card-body">
-                      <div class="text-secondary fw-semibold mb-2">{label}</div>
-                      <div class="fs-3 fw-bold text-dark mb-2">₹{value:,.2f}</div>
-                      <div class="small text-secondary">{detail}</div>
-                    </div>
-                  </div>
-                </div>
-                '''
+                '<div class="col-12 col-md-6 col-xl-4">'
+                f'<div class="card h-100 shadow-sm border-top border-3 {accent}">'
+                '<div class="card-body">'
+                f'<div class="text-secondary fw-semibold mb-2">{escape(label)}</div>'
+                f'<div class="fs-3 fw-bold text-dark mb-2">₹{value:,.2f}</div>'
+                f'<div class="small text-secondary">{escape(detail)}</div>'
+                '</div></div></div>'
                 for _, label, value, detail, accent in kpi_cards
             )
-            + "</div></div>",
-            unsafe_allow_html=True
+            + "</div></div>"
         )
+        st.markdown(kpi_html, unsafe_allow_html=True)
 
         st.divider()
-        st.markdown('<div class="card shadow-sm"><div class="card-body">', unsafe_allow_html=True)
         st.subheader("Income vs Expenses")
-        st.plotly_chart(
-            period_income_expense_chart(
-                df,
-                period_start,
-                period_end,
-                period_mode
-            ),
-            width="stretch",
-            config={"responsive": True, "displayModeBar": False}
-        )
-        st.markdown('</div></div>', unsafe_allow_html=True)
+        period_transactions = period_summary["transactions"]
+        if period_transactions.empty:
+            st.info("No transactions recorded for this period.")
+        else:
+            st.plotly_chart(
+                period_income_expense_chart(
+                    df,
+                    period_start,
+                    period_end,
+                    period_mode
+                ),
+                width="stretch",
+                config={"responsive": True, "displayModeBar": False}
+            )
 
         st.divider()
-        st.markdown('<div class="row g-3">', unsafe_allow_html=True)
         chart_left, chart_right = st.columns(2)
 
         with chart_left:
-            st.markdown('<div class="card shadow-sm h-100"><div class="card-body">', unsafe_allow_html=True)
             st.subheader("Expense Distribution")
             pie = expense_category_pie_chart(df, period_start, period_end)
             pie_summary = expense_category_summary(df, period_start, period_end)
@@ -904,7 +899,7 @@ elif page == "Dashboard":
                         selected_row = selected_rows.iloc[0]
                         st.markdown(
                             f'<div class="alert alert-light border mt-2 mb-0">'
-                            f'<strong>Category:</strong> {selected_row["Category"]}<br>'
+                            f'<strong>Category:</strong> {escape(str(selected_row["Category"]))}<br>'
                             f'<strong>Amount Spent:</strong> ₹{selected_row["Amount"]:,.2f}<br>'
                             f'<strong>Percentage:</strong> {selected_row["Percentage"]:.1f}%'
                             f'</div>',
@@ -914,18 +909,18 @@ elif page == "Dashboard":
                 if st.button("View enlarged chart", key="open_expense_pie"):
                     st.session_state.expense_pie_popup = True
 
-            st.markdown('</div></div>', unsafe_allow_html=True)
-
         with chart_right:
-            st.markdown('<div class="card shadow-sm h-100"><div class="card-body">', unsafe_allow_html=True)
             st.subheader("Daily Spending Trend")
-            st.plotly_chart(
-                period_daily_expense_chart(df, period_start, period_end),
-                width="stretch",
-                config={"responsive": True, "displayModeBar": False}
-            )
-            st.markdown('</div></div>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+            if period_transactions[
+                period_transactions["Type"] == "Expense"
+            ].empty:
+                st.info("No expenses recorded for this period.")
+            else:
+                st.plotly_chart(
+                    period_daily_expense_chart(df, period_start, period_end),
+                    width="stretch",
+                    config={"responsive": True, "displayModeBar": False}
+                )
 
         if st.session_state.get("expense_pie_popup"):
             if hasattr(st, "dialog"):
@@ -948,7 +943,6 @@ elif page == "Dashboard":
         insights_col, recent_col = st.columns([1, 1])
 
         with insights_col:
-            st.markdown('<div class="card shadow-sm h-100"><div class="card-body">', unsafe_allow_html=True)
             st.subheader("Financial Insights")
             period_expenses = period_summary["transactions"]
             expense_only = period_expenses[
@@ -979,18 +973,16 @@ elif page == "Dashboard":
                 st.markdown(
                     f"""
                     <ul class="mb-0">
-                      <li>Highest spending category: <strong>{highest_category}</strong> (₹{highest_category_amount:,.2f})</li>
+                      <li>Highest spending category: <strong>{escape(highest_category)}</strong> (₹{highest_category_amount:,.2f})</li>
                       <li>Highest spending day: <strong>{highest_day.strftime('%d %b %Y')}</strong> (₹{highest_day_amount:,.2f})</li>
-                      <li>{expense_text}</li>
+                      <li>{escape(expense_text)}</li>
                       <li>Period savings: <strong>₹{period_summary['savings']:,.2f}</strong></li>
                     </ul>
                     """,
                     unsafe_allow_html=True
                 )
-            st.markdown('</div></div>', unsafe_allow_html=True)
 
         with recent_col:
-            st.markdown('<div class="card shadow-sm h-100"><div class="card-body">', unsafe_allow_html=True)
             st.subheader("Recent Transactions")
             latest = df.sort_values(
                 ["Date", "Created At"] if "Created At" in df else ["Date"],
@@ -1015,7 +1007,6 @@ elif page == "Dashboard":
             if st.button("View Transaction History", key="dashboard_history"):
                 st.session_state.navigation = "Transaction History"
                 st.rerun()
-            st.markdown('</div></div>', unsafe_allow_html=True)
 
     except Exception as error:
         st.error(f"Unable to load dashboard: {error}")
@@ -1113,7 +1104,6 @@ elif page == "Transaction History":
             subset=["Date", "Amount"]
         ).copy()
 
-        st.markdown('<div class="card shadow-sm mb-3"><div class="card-body">', unsafe_allow_html=True)
         history_period = st.radio(
             "Date filter",
             ["Daily", "Weekly", "Monthly", "Custom Date Range"],
@@ -1185,7 +1175,6 @@ elif page == "Transaction History":
                 st.stop()
             history_start = pd.Timestamp(custom_start)
             history_end = pd.Timestamp(custom_end)
-        st.markdown('</div></div>', unsafe_allow_html=True)
 
         # Summary metrics
         total_income = df.loc[
