@@ -20,9 +20,8 @@ def _load_stylesheet() -> str:
 
 
 def inject_app_styles() -> None:
-    bootstrap_css = BOOTSTRAP_STYLESHEET_PATH.read_text(encoding="utf-8")
     app_css = _load_stylesheet()
     st.markdown(
-        f"<style>{bootstrap_css}\n{app_css}</style>",
+        f"<style>{app_css}</style>",
         unsafe_allow_html=True
     )
