@@ -5,6 +5,7 @@ import streamlit as st
 
 STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
 STYLESHEET_PATH = STATIC_DIR / "dashboard.css"
+BOOTSTRAP_STYLESHEET_PATH = STATIC_DIR / "bootstrap.min.css"
 
 
 @st.cache_data(show_spinner=False)
@@ -15,7 +16,9 @@ def _load_stylesheet() -> str:
 
 
 def inject_app_styles() -> None:
+    bootstrap_css = BOOTSTRAP_STYLESHEET_PATH.read_text(encoding="utf-8")
+    app_css = _load_stylesheet()
     st.markdown(
-        f"<style>{_load_stylesheet()}</style>",
+        f"<style>{bootstrap_css}\n{app_css}</style>",
         unsafe_allow_html=True
     )

@@ -32,7 +32,8 @@ from services.visualization_service import (
     savings_trend_chart,
     top_spending_categories,
     period_income_expense_chart,
-    expense_category_donut_chart,
+    expense_category_pie_chart,
+    expense_category_summary,
     period_daily_expense_chart
 )
 from ui.styles import inject_app_styles
@@ -322,6 +323,67 @@ def clear_sheet_data_cache():
     load_transactions.clear()
 
 
+def get_plotly_points(event):
+    if event is None:
+        return []
+    selection = getattr(event, "selection", None)
+    if selection is None and isinstance(event, dict):
+        selection = event.get("selection", {})
+    if hasattr(selection, "points"):
+        return selection.points or []
+    if isinstance(selection, dict):
+        return selection.get("points", []) or []
+    return []
+
+
+if hasattr(st, "dialog"):
+    @st.dialog("Expense Distribution")
+    def show_expense_distribution(pie_df, pie_summary):
+        pie = expense_category_pie_chart(
+            pie_df,
+            pie_summary.attrs["start_date"],
+            pie_summary.attrs["end_date"]
+        )
+        if pie is None:
+            st.info("No expenses recorded for this period.")
+        else:
+            pie.update_layout(height=520)
+            pie_event = st.plotly_chart(
+                pie,
+                width="stretch",
+                key="expense_pie_large",
+                on_select="rerun",
+                selection_mode=("points",),
+                config={"responsive": True, "displayModeBar": True}
+            )
+            points = get_plotly_points(pie_event)
+            if points:
+                point_index = points[-1].get("point_index")
+                if point_index is not None and point_index < len(pie_summary):
+                    st.session_state.expense_selected_category = str(
+                        pie_summary.iloc[point_index]["Category"]
+                    )
+
+            selected_category = st.session_state.get("expense_selected_category")
+            if selected_category:
+                selected_rows = pie_summary[
+                    pie_summary["Category"] == selected_category
+                ]
+                if not selected_rows.empty:
+                    row = selected_rows.iloc[0]
+                    st.markdown(
+                        f'<div class="alert alert-light border">'
+                        f'<strong>Category:</strong> {row["Category"]}<br>'
+                        f'<strong>Amount Spent:</strong> ₹{row["Amount"]:,.2f}<br>'
+                        f'<strong>Percentage:</strong> {row["Percentage"]:.1f}%'
+                        f'</div>',
+                        unsafe_allow_html=True
+                    )
+        if st.button("Close", key="close_expense_pie"):
+            st.session_state.expense_pie_popup = False
+            st.rerun()
+
+
 # --------------------------------------------------
 # APPLICATION HEADER
 # --------------------------------------------------
@@ -405,6 +467,7 @@ if page == "Add Transaction":
         unsafe_allow_html=True
     )
 
+    st.markdown('<div class="card shadow-sm"><div class="card-body">', unsafe_allow_html=True)
     with st.form("transaction_form"):
         date_col, category_col = st.columns(2)
         with date_col:
@@ -501,6 +564,7 @@ if page == "Add Transaction":
                 except Exception as error:
 
                     st.error(f"Unexpected error: {error}")
+    st.markdown('</div></div>', unsafe_allow_html=True)
 
 
 # --------------------------------------------------
@@ -595,7 +659,7 @@ elif page == "Dashboard":
 
         period_mode = st.radio(
             "Dashboard period",
-            ["Monthly", "Weekly", "Daily", "Custom Date Range"],
+            ["Daily", "Weekly", "Monthly", "Custom Date Range"],
             horizontal=True,
             key="dashboard_period"
         )
@@ -734,42 +798,36 @@ elif page == "Dashboard":
                 detail = f"{status.title()} {abs(percentage):.1f}% (₹{absolute:+,.2f})"
             return f"{label}: {detail}"
 
-        with st.container(
-            horizontal=True,
-            wrap=True,
-            gap="small",
-            key="dashboard-kpis"
-        ):
-            kpi_cards = [
-                (
-                    "balance",
-                    "Current Balance",
-                    f"₹{current_balance:,.2f}",
-                    "Overall balance; unchanged by period"
-                ),
-                (
-                    "income",
-                    "Total Income",
-                    f"₹{period_summary['income']:,.2f}",
-                    comparison_text(income_comparison, "Income")
-                ),
-                (
-                    "expenses",
-                    "Total Expenses",
-                    f"₹{period_summary['expenses']:,.2f}",
-                    comparison_text(expense_comparison, "Expenses")
-                )
-            ]
-            for key, label, value, detail in kpi_cards:
-                with st.container(
-                    width=300,
-                    border=True,
-                    key=f"dashboard-kpi-{key}"
-                ):
-                    st.metric(label, value)
-                    st.caption(detail)
+        kpi_cards = [
+            ("balance", "Current Balance", current_balance,
+             "Overall balance; unchanged by period", "border-primary"),
+            ("income", "Total Income", period_summary["income"],
+             comparison_text(income_comparison, "Income"), "border-success"),
+            ("expenses", "Total Expenses", period_summary["expenses"],
+             comparison_text(expense_comparison, "Expenses"), "border-danger")
+        ]
+        st.markdown(
+            '<div class="container-fluid px-0"><div class="row g-3">'
+            + "".join(
+                f'''
+                <div class="col-12 col-md-6 col-xl-4">
+                  <div class="card h-100 shadow-sm border-top border-3 {accent}">
+                    <div class="card-body">
+                      <div class="text-secondary fw-semibold mb-2">{label}</div>
+                      <div class="fs-3 fw-bold text-dark mb-2">₹{value:,.2f}</div>
+                      <div class="small text-secondary">{detail}</div>
+                    </div>
+                  </div>
+                </div>
+                '''
+                for _, label, value, detail, accent in kpi_cards
+            )
+            + "</div></div>",
+            unsafe_allow_html=True
+        )
 
         st.divider()
+        st.markdown('<div class="card shadow-sm"><div class="card-body">', unsafe_allow_html=True)
         st.subheader("Income vs Expenses")
         st.plotly_chart(
             period_income_expense_chart(
@@ -781,37 +839,158 @@ elif page == "Dashboard":
             width="stretch",
             config={"responsive": True, "displayModeBar": False}
         )
+        st.markdown('</div></div>', unsafe_allow_html=True)
 
         st.divider()
-        chart_col1, chart_col2 = st.columns(2)
+        st.markdown('<div class="row g-3">', unsafe_allow_html=True)
+        chart_left, chart_right = st.columns(2)
 
-        with chart_col1:
+        with chart_left:
+            st.markdown('<div class="card shadow-sm h-100"><div class="card-body">', unsafe_allow_html=True)
             st.subheader("Expense Distribution")
-            donut = expense_category_donut_chart(
-                df,
-                period_start,
-                period_end
-            )
-            if donut is None:
+            pie = expense_category_pie_chart(df, period_start, period_end)
+            pie_summary = expense_category_summary(df, period_start, period_end)
+            selected_category = st.session_state.get("expense_selected_category")
+
+            if pie is None:
                 st.info("No expenses recorded for this period.")
             else:
-                st.plotly_chart(
-                    donut,
+                pie_event = st.plotly_chart(
+                    pie,
                     width="stretch",
-                    config={"responsive": True, "displayModeBar": False}
+                    key="expense_pie",
+                    on_select="rerun",
+                    selection_mode=("points",),
+                    config={"responsive": True, "displayModeBar": True}
                 )
+                points = get_plotly_points(pie_event)
+                if points:
+                    point = points[-1]
+                    point_index = point.get("point_index")
+                    if point_index is not None and point_index < len(pie_summary):
+                        selected_category = str(pie_summary.iloc[point_index]["Category"])
+                        st.session_state.expense_selected_category = selected_category
 
-        with chart_col2:
+                if selected_category:
+                    selected_rows = pie_summary[
+                        pie_summary["Category"] == selected_category
+                    ]
+                    if not selected_rows.empty:
+                        selected_row = selected_rows.iloc[0]
+                        st.markdown(
+                            f'<div class="alert alert-light border mt-2 mb-0">'
+                            f'<strong>Category:</strong> {selected_row["Category"]}<br>'
+                            f'<strong>Amount Spent:</strong> ₹{selected_row["Amount"]:,.2f}<br>'
+                            f'<strong>Percentage:</strong> {selected_row["Percentage"]:.1f}%'
+                            f'</div>',
+                            unsafe_allow_html=True
+                        )
+
+                if st.button("View enlarged chart", key="open_expense_pie"):
+                    st.session_state.expense_pie_popup = True
+
+            st.markdown('</div></div>', unsafe_allow_html=True)
+
+        with chart_right:
+            st.markdown('<div class="card shadow-sm h-100"><div class="card-body">', unsafe_allow_html=True)
             st.subheader("Daily Spending Trend")
             st.plotly_chart(
-                period_daily_expense_chart(
-                    df,
-                    period_start,
-                    period_end
-                ),
+                period_daily_expense_chart(df, period_start, period_end),
                 width="stretch",
                 config={"responsive": True, "displayModeBar": False}
             )
+            st.markdown('</div></div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+
+        if st.session_state.get("expense_pie_popup"):
+            if hasattr(st, "dialog"):
+                show_expense_distribution(df, pie_summary)
+            else:
+                with st.expander("Expense Distribution - Enlarged", expanded=True):
+                    st.plotly_chart(
+                        pie,
+                        width="stretch",
+                        key="expense_pie_fallback",
+                        on_select="rerun",
+                        selection_mode=("points",),
+                        config={"responsive": True, "displayModeBar": True}
+                    )
+                    if st.button("Close enlarged chart", key="close_expense_pie"):
+                        st.session_state.expense_pie_popup = False
+                        st.rerun()
+
+        st.divider()
+        insights_col, recent_col = st.columns([1, 1])
+
+        with insights_col:
+            st.markdown('<div class="card shadow-sm h-100"><div class="card-body">', unsafe_allow_html=True)
+            st.subheader("Financial Insights")
+            period_expenses = period_summary["transactions"]
+            expense_only = period_expenses[
+                period_expenses["Type"] == "Expense"
+            ].copy()
+
+            if expense_only.empty:
+                st.info("No expense insights are available for this period.")
+            else:
+                category_totals = (
+                    expense_only.groupby("Category", dropna=False)["Amount"].sum()
+                    .sort_values(ascending=False)
+                )
+                highest_category = str(category_totals.index[0])
+                highest_category_amount = float(category_totals.iloc[0])
+
+                daily_totals = expense_only.groupby("Date")["Amount"].sum()
+                highest_day = daily_totals.idxmax()
+                highest_day_amount = float(daily_totals.max())
+
+                expense_status = expense_comparison["status"]
+                expense_change = expense_comparison["percentage_change"]
+                if expense_change is None:
+                    expense_text = "Expense comparison is not available because the previous period was zero."
+                else:
+                    expense_text = f"Spending {expense_status} by {abs(expense_change):.1f}% versus the previous period."
+
+                st.markdown(
+                    f"""
+                    <ul class="mb-0">
+                      <li>Highest spending category: <strong>{highest_category}</strong> (₹{highest_category_amount:,.2f})</li>
+                      <li>Highest spending day: <strong>{highest_day.strftime('%d %b %Y')}</strong> (₹{highest_day_amount:,.2f})</li>
+                      <li>{expense_text}</li>
+                      <li>Period savings: <strong>₹{period_summary['savings']:,.2f}</strong></li>
+                    </ul>
+                    """,
+                    unsafe_allow_html=True
+                )
+            st.markdown('</div></div>', unsafe_allow_html=True)
+
+        with recent_col:
+            st.markdown('<div class="card shadow-sm h-100"><div class="card-body">', unsafe_allow_html=True)
+            st.subheader("Recent Transactions")
+            latest = df.sort_values(
+                ["Date", "Created At"] if "Created At" in df else ["Date"],
+                ascending=[False, False] if "Created At" in df else [False],
+                kind="stable"
+            ).head(10)
+            if latest.empty:
+                st.info("No transactions available.")
+            else:
+                display_latest = latest[
+                    ["Date", "Description", "Category", "Type", "Amount"]
+                ].copy()
+                display_latest["Date"] = display_latest["Date"].dt.strftime("%d-%b-%Y")
+                display_latest["Amount"] = display_latest["Amount"].map(
+                    lambda value: f"₹{value:,.2f}"
+                )
+                st.dataframe(
+                    display_latest,
+                    width="stretch",
+                    hide_index=True
+                )
+            if st.button("View Transaction History", key="dashboard_history"):
+                st.session_state.navigation = "Transaction History"
+                st.rerun()
+            st.markdown('</div></div>', unsafe_allow_html=True)
 
     except Exception as error:
         st.error(f"Unable to load dashboard: {error}")
@@ -909,6 +1088,80 @@ elif page == "Transaction History":
             subset=["Date", "Amount"]
         ).copy()
 
+        st.markdown('<div class="card shadow-sm mb-3"><div class="card-body">', unsafe_allow_html=True)
+        history_period = st.radio(
+            "Date filter",
+            ["Daily", "Weekly", "Monthly", "Custom Date Range"],
+            horizontal=True,
+            key="history_period"
+        )
+        history_today = date.today()
+        history_start = None
+        history_end = None
+
+        if history_period == "Daily":
+            history_day = st.date_input(
+                "Select date",
+                value=history_today,
+                key="history_day"
+            )
+            history_start = pd.Timestamp(history_day)
+            history_end = history_start
+        elif history_period == "Weekly":
+            week_date = st.date_input(
+                "Week containing",
+                value=history_today,
+                key="history_week"
+            )
+            chosen = pd.Timestamp(week_date)
+            history_start = (chosen - pd.Timedelta(days=chosen.weekday())).normalize()
+            history_end = history_start + pd.Timedelta(days=6)
+        elif history_period == "Monthly":
+            month_col, year_col = st.columns(2)
+            month_names = [
+                "January", "February", "March", "April", "May", "June",
+                "July", "August", "September", "October", "November", "December"
+            ]
+            start_year = pd.Timestamp(df["Date"].min()).year
+            year_options = list(range(start_year, history_today.year + 2))
+            with month_col:
+                selected_month_name = st.selectbox(
+                    "Month",
+                    month_names,
+                    index=history_today.month - 1,
+                    key="history_month"
+                )
+            with year_col:
+                selected_year = st.selectbox(
+                    "Year",
+                    year_options,
+                    index=year_options.index(history_today.year),
+                    key="history_year"
+                )
+            month_number = month_names.index(selected_month_name) + 1
+            history_start = pd.Timestamp(selected_year, month_number, 1)
+            history_end = history_start + pd.offsets.MonthEnd(0)
+        else:
+            custom_start_col, custom_end_col = st.columns(2)
+            with custom_start_col:
+                custom_start = st.date_input(
+                    "Start date",
+                    value=history_today - pd.Timedelta(days=6),
+                    key="history_custom_start"
+                )
+            with custom_end_col:
+                custom_end = st.date_input(
+                    "End date",
+                    value=history_today,
+                    key="history_custom_end"
+                )
+            if custom_end < custom_start:
+                st.error("End date cannot be earlier than start date.")
+                st.stop()
+            history_start = pd.Timestamp(custom_start)
+            history_end = pd.Timestamp(custom_end)
+        st.markdown('</div></div>', unsafe_allow_html=True)
+
         # Summary metrics
         total_income = df.loc[
             df["Type"] == "Income", "Amount"
@@ -956,6 +1209,11 @@ elif page == "Transaction History":
             )
 
         filtered = df.copy()
+
+        filtered = filtered[
+            (filtered["Date"] >= history_start) &
+            (filtered["Date"] <= history_end)
+        ]
 
         if search:
             mask = (

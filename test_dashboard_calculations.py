@@ -9,6 +9,8 @@ from utils.calculations import (
 from services.visualization_service import (
     period_income_expense_chart,
     expense_category_donut_chart,
+    expense_category_summary,
+    expense_category_pie_chart,
     period_daily_expense_chart
 )
 
@@ -99,6 +101,28 @@ def test_empty_period_and_charts():
     ) is not None
 
 
+def test_pie_top_ten_and_others():
+    many = pd.DataFrame([
+        {
+            "Date": "2026-11-01",
+            "Type": "Expense",
+            "Category": f"Category {number}",
+            "Amount": number * 100,
+            "Created At": f"2026-11-01T10:{number:02d}:00"
+        }
+        for number in range(1, 13)
+    ])
+    summary = expense_category_summary(
+        many, "2026-11-01", "2026-11-30"
+    )
+    assert len(summary) == 11
+    assert summary.iloc[-1]["Category"] == "Others"
+    assert abs(summary["Percentage"].sum() - 100) < 0.001
+    assert expense_category_pie_chart(
+        many, "2026-11-01", "2026-11-30"
+    ) is not None
+
+
 if __name__ == "__main__":
     test_monthly_filter()
     test_weekly_monday_sunday_filter()
@@ -106,4 +130,5 @@ if __name__ == "__main__":
     test_zero_previous_comparison()
     test_current_balance_ignores_period()
     test_empty_period_and_charts()
+    test_pie_top_ten_and_others()
     print("Dashboard calculation tests passed.")
